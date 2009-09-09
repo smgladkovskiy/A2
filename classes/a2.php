@@ -30,32 +30,24 @@
 
 class A2 extends Acl {
 
-	public $a1; 				   // the Authentication library (used to retrieve user)
-	protected $guest_role; // name of the guest role (used when no user is logged in)
+	public    $a1;          // the Authentication library (used to retrieve user)
+	protected $_guest_role; // name of the guest role (used when no user is logged in)
 
 	/**
-	 * Create an instance of A2.
+	 * Return an instance of A2.
 	 *
 	 * @return  object
 	 */
-	public static function factory($config_name = 'a2')
+	public static function instance($_name = 'a2')
 	{
-		return new A2($config_name);
-	}
+		static $_instances;
 
-	/**
-	 * Return a static instance of A2.
-	 *
-	 * @return  object
-	 */
-	public static function instance($config_name = 'a2')
-	{
-		static $instance;
+		if ( ! isset($_instances[$_name]))
+		{
+			$_instances[$_name] = new A2($_name);
+		}
 
-		// Load the A2 instance
-		empty($instance[$config_name]) and $instance[$config_name] = new A2($config_name);
-
-		return $instance[$config_name];
+		return $_instances[$_name];
 	}
 
 	/**
@@ -63,21 +55,25 @@ class A2 extends Acl {
 	 *
 	 * @return  void
 	 */
-	public function __construct($config_name = 'a2')
+	public function __construct($_name = 'a2')
 	{
 		// Read config
-		$config          = Kohana::config($config_name);
+		$config          = Kohana::config($_name);
 		
-		$this->guest_role = $config['guest_role'];
+		$this->_guest_role = $config['guest_role'];
 
 		$instance = new ReflectionMethod($config->lib['class'],'instance');
 
-		$this->a1	= $instance->invokeArgs(NULL, !empty($config->lib['params']) ? $config->lib['params'] : array());
+		$params = !empty($config->lib['params']) 
+			? $config->lib['params'] 
+			: array();
+		
+		$this->a1	= $instance->invokeArgs(NULL, $params);
 
 		// Add Guest Role as role
-		if(!array_key_exists($this->guest_role,$config['roles']))
+		if ( ! array_key_exists($this->_guest_role,$config['roles']))
 		{
-			$this->add_role($this->guest_role);
+			$this->add_role($this->_guest_role);
 		}
 
 		// Add roles
@@ -116,15 +112,15 @@ class A2 extends Acl {
 			}
 		}
 	}
-	
+
 	public function allowed($resource = NULL, $privilige = NULL)
 	{
 		// retrieve user
-		$role = ($user = $this->a1->get_user()) ? $user : $this->guest_role;
+		$role = ($user = $this->a1->get_user()) ? $user : $this->_guest_role;
 
 		return $this->is_allowed($role,$resource,$privilige);
 	}
-	
+
 	// Alias of the logged_in method
 	public function logged_in() 
 	{

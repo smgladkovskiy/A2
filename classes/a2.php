@@ -58,17 +58,19 @@ class A2 extends Acl {
 	public function __construct($_name = 'a2')
 	{
 		// Read config
-		$config          = Kohana::config($_name);
-		
-		$this->_guest_role = $config['guest_role'];
+		$config = Kohana::config($_name);
 
+		// Create instance of Authenticate lib (a1, auth, authlite)
 		$instance = new ReflectionMethod($config->lib['class'],'instance');
 
 		$params = !empty($config->lib['params']) 
 			? $config->lib['params'] 
 			: array();
-		
-		$this->a1	= $instance->invokeArgs(NULL, $params);
+
+		$this->a1 = $instance->invokeArgs(NULL, $params);
+
+		// Guest role
+		$this->_guest_role = $config['guest_role'];
 
 		// Add Guest Role as role
 		if ( ! array_key_exists($this->_guest_role,$config['roles']))
@@ -76,14 +78,31 @@ class A2 extends Acl {
 			$this->add_role($this->_guest_role);
 		}
 
-		// Add roles
-		foreach($config['roles'] as $role => $parent)
+		// Load ACL data
+		$this->load($config);
+	}
+
+	/**
+	 * Load ACL data (roles/resources/rules)
+	 *
+	 * This allows you to add context specific rules
+	 * roles and resources. 
+	 *
+	 * @param  array|Kohana_Config  configiration data
+	 */
+	public function load($config)
+	{
+		// Roles
+		if ( isset($config['roles']))
 		{
-			$this->add_role($role,$parent);
+			foreach ( $config['roles'] as $role => $parent)
+			{
+				$this->add_role($role,$parent);
+			}
 		}
 
-		// Add resources
-		if(!empty($config['resources']))
+		// Resources
+		if ( isset($config['resources']))
 		{
 			foreach($config['resources'] as $resource => $parent)
 			{
@@ -91,23 +110,47 @@ class A2 extends Acl {
 			}
 		}
 
-		// Add rules
-		foreach(array('allow','deny') as $method)
+		// Rules
+		if(isset($config['rules']))
 		{
-			if(!empty($config['rules'][$method]))
+			foreach(array('allow','deny') as $method)
 			{
-				foreach($config['rules'][$method] as $rule)
+				if ( isset($config['rules'][$method]))
 				{
-					if( ($num = 4 - count($rule)) )
+					foreach ( $config['rules'][$method] as $rule)
 					{
-						$rule += array_fill(count($rule),$num,NULL);
+						if ( $num = (4 - count($rule)))
+						{
+							$rule += array_fill(count($rule),$num,NULL);
+						}
+
+						list($roles,$resources,$priviliges,$assertion) = $rule;
+
+						// create assert object
+						if ( $assertion !== NULL)
+						{
+							if ( is_array($assertion))
+							{
+								$assertion = count($assertion) === 2
+									? new $assertion[0]($assertion[1])
+									: new $assertion[0];
+							}
+							else
+							{
+								$assertion = new $assertion;
+							}
+						}
+
+						// this is faster than calling $this->$method
+						if ( $method === 'allow')
+						{
+							$this->allow($roles,$resources,$priviliges,$assertion);
+						}
+						else
+						{
+							$this->deny($roles,$resources,$priviliges,$assertion);
+						}
 					}
-					
-					// create assert object
-					if($rule[3] !== NULL)
-						$rule[3] = isset($rule[3][1]) ? new $rule[3][0]($rule[3][1]) : new $rule[3][0];
-					
-					$this->$method($rule[0],$rule[1],$rule[2],$rule[3]);
 				}
 			}
 		}

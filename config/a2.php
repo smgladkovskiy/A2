@@ -13,7 +13,7 @@ return array(
 	 */
 	'lib' => array(
 		'class'  => 'A1', // (or AUTH)
-		'params' => array('A1')
+		'params' => array('a1')
 	),
 
 	/*

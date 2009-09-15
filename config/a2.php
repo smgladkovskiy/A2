@@ -16,6 +16,11 @@ return array(
 		'params' => array('a1')
 	),
 
+	/**
+	 * Throws an a2_exception when authentication fails
+	 */
+	'exception' => FALSE,
+
 	/*
 	 * The ACL Roles (String IDs are fine, use of ACL_Role_Interface objects also possible)
 	 * Use: ROLE => PARENT(S) (make sure parent is defined as role itself before you use it as a parent)

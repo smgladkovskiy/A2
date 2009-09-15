@@ -69,6 +69,9 @@ class A2 extends Acl {
 
 		$this->a1 = $instance->invokeArgs(NULL, $params);
 
+		// Throw exceptions?
+		$this->_exception = $config->exception;
+
 		// Guest role
 		$this->_guest_role = $config['guest_role'];
 
@@ -161,7 +164,30 @@ class A2 extends Acl {
 		// retrieve user
 		$role = ($user = $this->a1->get_user()) ? $user : $this->_guest_role;
 
-		return $this->is_allowed($role,$resource,$privilige);
+		$result = $this->is_allowed($role,$resource,$privilige);
+
+		if ( ! $this->_exception || $result === TRUE )
+		{
+			return $result;
+		}
+		else
+		{
+			$error = $resource !== NULL
+				? $resource instanceof Acl_Resource_Interface ? $resource->get_resource_id() : (string) $resource
+				: 'resource';
+
+			$error .= '.' . ($privilege !== NULL
+				? $privilege
+				: 'default');
+
+			if( ! $message = Kohana::message('a2', $error))
+			{
+				// specific message not found - use default
+				$message = Kohana::message('a2', 'default');
+			}
+
+			throw new A2_Exception($message);
+		}
 	}
 
 	// Alias of the logged_in method

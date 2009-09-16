@@ -122,15 +122,14 @@ class A2 extends Acl {
 				{
 					foreach ( $config['rules'][$method] as $rule)
 					{
-						if ( $num = (4 - count($rule)))
-						{
-							$rule += array_fill(count($rule),$num,NULL);
-						}
+						// create variables
+						$role = $resource = $privilege = $assertion = NULL;
 
-						list($roles,$resources,$priviliges,$assertion) = $rule;
+						// extract variables from rule
+						extract($rule);
 
 						// create assert object
-						if ( $assertion !== NULL)
+						if ( $assertion )
 						{
 							if ( is_array($assertion))
 							{
@@ -147,11 +146,11 @@ class A2 extends Acl {
 						// this is faster than calling $this->$method
 						if ( $method === 'allow')
 						{
-							$this->allow($roles,$resources,$priviliges,$assertion);
+							$this->allow($role,$resource,$privilege,$assertion);
 						}
 						else
 						{
-							$this->deny($roles,$resources,$priviliges,$assertion);
+							$this->deny($role,$resource,$privilege,$assertion);
 						}
 					}
 				}

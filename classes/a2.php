@@ -1,6 +1,6 @@
 <?php
 
-/**
+/*
  * User AUTHORIZATION library. 
  * 
  * - Authentication vs Authorization -
@@ -33,7 +33,7 @@ class A2 extends Acl {
 	public    $a1;          // the Authentication library (used to retrieve user)
 	protected $_guest_role; // name of the guest role (used when no user is logged in)
 
-	/**
+	/*
 	 * Return an instance of A2.
 	 *
 	 * @return  object
@@ -85,7 +85,7 @@ class A2 extends Acl {
 		$this->load($config);
 	}
 
-	/**
+	/*
 	 * Load ACL data (roles/resources/rules)
 	 *
 	 * This allows you to add context specific rules
@@ -158,14 +158,29 @@ class A2 extends Acl {
 		}
 	}
 
-	public function allowed($resource = NULL, $privilige = NULL)
+	/*
+	 * Check if logged in user (or guest) has access to resource/privilege.
+	 *
+	 * @param   mixed     Resource
+	 * @param   string    Privilege
+	 * @param   boolean   Override exception handling set by config
+	 * @return  boolean   Is user allowed
+	 * @throws  A2_Exception   In exception modus, when user is not allowed
+	 */
+	public function allowed($resource = NULL, $privilige = NULL, $exception = NULL)
 	{
+		if ( ! is_bool($exception))
+		{
+			// take config value
+			$exception = $this->_exception;
+		}
+
 		// retrieve user
 		$role = ($user = $this->a1->get_user()) ? $user : $this->_guest_role;
 
 		$result = $this->is_allowed($role,$resource,$privilige);
 
-		if ( ! $this->_exception || $result === TRUE )
+		if ( ! $exception || $result === TRUE )
 		{
 			return $result;
 		}

@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * User AUTHORIZATION library. 
  * 
  * - Authentication vs Authorization -
@@ -15,16 +15,18 @@
  *
  * The Access Control List (roles,resources,rules) and the desired Authentication library are stored in a
  * config file. Usage in your code (controller/libraries/models) are as follow:
- 
- 		if(A2::instance()->allowed('blog','read')) // simple acl usage
- 			// do
- 		else
- 			// don't 
- 
- 		if(A2::instance()->allowed($blog,'delete')) // advanced acl usage, using the improved assertions
- 			// do
- 		else
- 			// don't
+
+		// simple acl usage (resource string 'blog')
+		if(A2::instance()->allowed('blog','read'))
+			// do
+		else
+			// don't 
+
+		// advanced acl usage (resource object: $blog), allows using the improved assertions
+		if(A2::instance()->allowed($blog,'delete')) 
+			// do
+		else
+			// don't
  *
  */
 
@@ -33,7 +35,7 @@ class A2 extends Acl {
 	public    $a1;          // the Authentication library (used to retrieve user)
 	protected $_guest_role; // name of the guest role (used when no user is logged in)
 
-	/*
+	/**
 	 * Return an instance of A2.
 	 *
 	 * @return  object
@@ -85,7 +87,7 @@ class A2 extends Acl {
 		$this->load($config);
 	}
 
-	/*
+	/**
 	 * Load ACL data (roles/resources/rules)
 	 *
 	 * This allows you to add context specific rules
@@ -158,7 +160,7 @@ class A2 extends Acl {
 		}
 	}
 
-	/*
+	/**
 	 * Check if logged in user (or guest) has access to resource/privilege.
 	 *
 	 * @param   mixed     Resource
@@ -204,13 +206,17 @@ class A2 extends Acl {
 		}
 	}
 
-	// Alias of the logged_in method
+	/**
+	 * Alias of the logged_in method
+	 */
 	public function logged_in() 
 	{
 		return $this->a1->logged_in();
 	}
 
-	// Alias of the get_user method
+	/**
+	 * Alias of the get_user method
+	 */
 	public function get_user()
 	{
 		return $this->a1->get_user();

@@ -167,7 +167,7 @@ class A2 extends Acl {
 	 * @return  boolean   Is user allowed
 	 * @throws  A2_Exception   In exception modus, when user is not allowed
 	 */
-	public function allowed($resource = NULL, $privilige = NULL, $exception = NULL)
+	public function allowed($resource = NULL, $privilege = NULL, $exception = NULL)
 	{
 		if ( ! is_bool($exception))
 		{
@@ -178,7 +178,7 @@ class A2 extends Acl {
 		// retrieve user
 		$role = ($user = $this->a1->get_user()) ? $user : $this->_guest_role;
 
-		$result = $this->is_allowed($role,$resource,$privilige);
+		$result = $this->is_allowed($role,$resource,$privilege);
 
 		if ( ! $exception || $result === TRUE )
 		{

@@ -18,6 +18,7 @@ abstract class A2_Core extends Acl {
 	protected $_guest_role;      // name of the guest role (used when no user is logged in)
 	protected $_common_resource; // common resources array
 
+	protected $_config;
 	/**
 	 * Return an instance of A2 class
 	 *
@@ -54,9 +55,9 @@ abstract class A2_Core extends Acl {
 	public function __construct($_name = 'a2', $load_from_db = TRUE)
 	{
 		// Read config
-		$config = Kohana::config($_name);
+		$this->_config = Kohana::config($_name);
 
-		$this->_common_resource = ! empty($config['common_resource']) ? $config['common_resource'] : NULL;
+		$this->_common_resource = ! empty($this->_config['common_resource']) ? $this->_config['common_resource'] : NULL;
 
 		if ($load_from_db === TRUE)
 		{
@@ -64,28 +65,28 @@ abstract class A2_Core extends Acl {
 		}
 
 		// Create instance of Authenticate lib (a1, auth, authlite)
-		$instance = new ReflectionMethod($config->lib['class'],'instance');
+		$instance = new ReflectionMethod($this->_config->lib['class'],'instance');
 
-		$params = !empty($config->lib['params'])
-			? $config->lib['params']
+		$params = !empty($this->_config->lib['params'])
+			? $this->_config->lib['params']
 			: array();
 
 		$this->a1 = $instance->invokeArgs(NULL, $params);
 
 		// Throw exceptions?
-		$this->_exception = $config->exception;
+		$this->_exception = $this->_config->exception;
 
 		// Guest role
-		$this->_guest_role = $config['guest_role'];
+		$this->_guest_role = $this->_config['guest_role'];
 
 		// Add Guest Role as role
-		if ( ! array_key_exists($this->_guest_role,$config['roles']))
+		if ( ! array_key_exists($this->_guest_role,$this->_config['roles']))
 		{
 			$this->add_role($this->_guest_role);
 		}
 
 		// Load ACL data
-		$this->load($config);
+		$this->load();
 	}
 
 	/**
@@ -96,34 +97,34 @@ abstract class A2_Core extends Acl {
 	 *
 	 * @param  array|Kohana_Config  configiration data
 	 */
-	public function load($config)
+	public function load()
 	{
 		// Roles
-		if ( isset($config['roles']))
+		if ( isset($this->_config['roles']))
 		{
-			foreach ( $config['roles'] as $role => $parent)
+			foreach ( $this->_config['roles'] as $role => $parent)
 			{
 				$this->add_role($role,$parent);
 			}
 		}
 
 		// Resources
-		if ( isset($config['resources']))
+		if ( isset($this->_config['resources']))
 		{
-			foreach($config['resources'] as $resource => $parent)
+			foreach($this->_config['resources'] as $resource => $parent)
 			{
 				$this->add_resource($resource,$parent);
 			}
 		}
 
 		// Rules
-		if(isset($config['rules']))
+		if(isset($this->_config['rules']))
 		{
 			foreach(array('allow','deny') as $method)
 			{
-				if ( isset($config['rules'][$method]))
+				if ( isset($this->_config['rules'][$method]))
 				{
-					foreach ( $config['rules'][$method] as $rule)
+					foreach ( $this->_config['rules'][$method] as $rule)
 					{
 						// create variables
 						$role = $resource = $privilege = $assertion = NULL;
@@ -262,13 +263,13 @@ abstract class A2_Core extends Acl {
 		{
 			// scan&rec roles
 			$roles_data = array();
-			foreach($config['roles'] as $role => $parent)
+			foreach($this->_config['roles'] as $role => $parent)
 			{
 				$roles_data[$role] = $this->_set_role($role);
 			}
 
 			// set roles parents
-			foreach($config['roles'] as $role => $parent)
+			foreach($this->_config['roles'] as $role => $parent)
 			{
 				if ( ! empty($roles_data[$parent]))
 				{
@@ -279,25 +280,25 @@ abstract class A2_Core extends Acl {
 
 			// scan&rec resoursec
 			$resources_data = array();
-			foreach($config['resources'] as $resource => $parent)
+			foreach($this->_config['resources'] as $resource => $parent)
 			{
 				$resources_data[$resource] = $this->_set_resource($resource);
 			}
 
 			// set resources parents
-			foreach($config['resources'] as $resource => $parent)
+			foreach($this->_config['resources'] as $resource => $parent)
 			{
-				if ( ! empty($config['common_resource']) AND $config['common_resource'] == $resource)
+				if ( ! empty($this->_config['common_resource']) AND $this->_config['common_resource'] == $resource)
 					continue;
 
 				$id_parent = NULL;
 
 				if ($parent == NULL)
 				{
-					if ($config['common_resource'] AND
-						! empty($resources_data[$config['common_resource']]))
+					if ($this->_config['common_resource'] AND
+						! empty($resources_data[$this->_config['common_resource']]))
 					{
-						$id_parent = $resources_data[$config['common_resource']];
+						$id_parent = $resources_data[$this->_config['common_resource']];
 					}
 				}
 				else
@@ -316,7 +317,7 @@ abstract class A2_Core extends Acl {
 
 			// get all possible privileges
 			$privileges_data = array();
-			foreach($config['rules'] as $type)
+			foreach($this->_config['rules'] as $type)
 			{
 				foreach($type as $rule)
 				{
@@ -337,7 +338,7 @@ abstract class A2_Core extends Acl {
 
 			// save rules
 			$rules_data = array();
-			foreach($config['rules'] as $type => $rules)
+			foreach($this->_config['rules'] as $type => $rules)
 			{
 				foreach($rules as $rule => $data)
 				{
@@ -388,12 +389,12 @@ abstract class A2_Core extends Acl {
 		}
 
 		// clear config data
-		$config['roles'] = array();
+		$this->_config['roles'] = array();
 
 		// set roles
 		foreach($roles as $role)
 		{
-			$config['roles'][$role->name] = (isset($all_roles[$role->parent_id])) ?
+			$this->_config['roles'][$role->name] = (isset($all_roles[$role->parent_id])) ?
 											$all_roles[$role->parent_id] :
 											NULL;
 		}
@@ -408,44 +409,44 @@ abstract class A2_Core extends Acl {
 		}
 
 		// clear config data
-		$config['resources'] = array();
+		$this->_config['resources'] = array();
 
 		// set resources
 		foreach($resources as $resource)
 		{
-			$config['resources'][$resource->name] = (isset($all_resources[$resource->parent_id])) ?
+			$this->_config['resources'][$resource->name] = (isset($all_resources[$resource->parent_id])) ?
 													 $all_resources[$resource->parent_id] :
 													 NULL;
 		}
 
 		// clear config data
-		$config['rules'] = array();
+		$this->_config['rules'] = array();
 
 		// set rules
 		$rules = $this->_load_rules();
 
 		foreach($rules as $rule)
 		{
-			$config['rules'][$rule->type][$rule->name]['resource'] = $rule->resource->load()->name;
+			$this->_config['rules'][$rule->type][$rule->name]['resource'] = $rule->resource->load()->name;
 
 			$roles = array();
 			foreach($rule->roles as $role)
 			{
 				$roles[] = $role->name;
 			}
-			$config['rules'][$rule->type][$rule->name]['role'] = $roles;
+			$this->_config['rules'][$rule->type][$rule->name]['role'] = $roles;
 
 			$privileges = array();
 			foreach($rule->privileges as $privilege)
 			{
 				$privileges[] = $privilege->name;
 			}
-			$config['rules'][$rule->type][$rule->name]['privilege'] = $privileges;
+			$this->_config['rules'][$rule->type][$rule->name]['privilege'] = $privileges;
 
 			$assertion = $rule->assertion->load();
 			if ( ! empty($assertion->id))
 			{
-				$config['rules'][$rule->type][$rule->name]['assertion'] = array(
+				$this->_config['rules'][$rule->type][$rule->name]['assertion'] = array(
 					'Acl_Assert_Argument',
 					array($assertion->user_field => $assertion->resource_field)
 				);

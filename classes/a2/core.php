@@ -1,97 +1,56 @@
-<?php
+<?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * User AUTHORIZATION library. 
+ * Authorization - provides Authentication (using A1) and ACL through a simple to use
+ * interface to the developer.
  * 
- * - Authentication vs Authorization -
- * "However, more precise usage describes authentication as the process of verifying a claim made by a 
- *  subject that it should be treated as acting on behalf of a given principal (person, computer, smart 
- *  card etc.), while authorization is the process of verifying that an authenticated subject has the 
- *  authority to perform a certain operation. Authentication, therefore, must precede authorization."
- * [http://en.wikipedia.org/wiki/Authentication#Authentication_vs._authorization]
+ * @package A2
+ * @author Wouter
+ * @author devolonter <devolonter@enerdesign.ru>
+ * @author smgladkovskiy <smgladkovskiy@gmail.com>
  *
- * This library offers advanced user authorization using a user defined Authentication library, and an
- * improved version of Zend's ACL for Kohana.
- *
- * The Access Control List (roles,resources,rules) and the desired Authentication library are stored in a
- * config file. Usage in your code (controller/libraries/models) are as follow:
-
-		// simple acl usage (resource string 'blog')
-		if(A2::instance()->allowed('blog','read'))
-			// do
-		else
-			// don't 
-
-		// advanced acl usage (resource object: $blog), allows using the improved assertions
-		if(A2::instance()->allowed($blog,'delete')) 
-			// do
-		else
-			// don't
- *
+ * @todo create ORM drivers to make it possible to work with different ORM libraries. Sprig is now
+ * the default one.
  */
-
 abstract class A2_Core extends Acl {
 
-	public    $a1;          // the Authentication library (used to retrieve user)
-	protected $_guest_role; // name of the guest role (used when no user is logged in)
+	public    $a1;               // the Authentication library (used to retrieve user)
+	protected $_guest_role;      // name of the guest role (used when no user is logged in)
+	protected $_common_resource; // common resources array
 
 	/**
-	 * Return an instance of A2.
+	 * Return an instance of A2 class
 	 *
-	 * @return  object
+	 * @staticvar array $_instances
+	 * @param string $_name
+	 * @param boolean $load_from_db
+	 * @return object
 	 */
-	public static function instance($_name = 'a2')
+	public static function instance($_name = 'a2', $load_from_db = TRUE)
 	{
 		static $_instances;
 
-		if ( ! isset($_instances[$_name]))
+
+		if ( ! isset($_instances[$_name]) AND $load_from_db === TRUE)
 		{
-			$_instances[$_name] = new A2($_name);
+			$config = Kohana::config('a2');
+			$class_name = 'A2_Driver_'.$config['orm_driver'];
+			$_instances[$_name] = new $class_name($_name, $load_from_db);
+		}
+		else
+		{
+			$_instances[$_name] = new A2_Driver_Config($_name, $load_from_db);
 		}
 
 		return $_instances[$_name];
 	}
 
-	/**
-	 * Build default A2 from config.
-	 *
-	 * @return  void
-	 */
-	public function __construct($_name = 'a2')
-	{
-		// Read config
-		$config = Kohana::config($_name);
-
-		// Create instance of Authenticate lib (a1, auth, authlite)
-		$instance = new ReflectionMethod($config->lib['class'],'instance');
-
-		$params = !empty($config->lib['params']) 
-			? $config->lib['params'] 
-			: array();
-
-		$this->a1 = $instance->invokeArgs(NULL, $params);
-
-		// Throw exceptions?
-		$this->_exception = $config->exception;
-
-		// Guest role
-		$this->_guest_role = $config['guest_role'];
-
-		// Add Guest Role as role
-		if ( ! array_key_exists($this->_guest_role,$config['roles']))
-		{
-			$this->add_role($this->_guest_role);
-		}
-
-		// Load ACL data
-		$this->load($config);
-	}
 
 	/**
 	 * Load ACL data (roles/resources/rules)
 	 *
 	 * This allows you to add context specific rules
-	 * roles and resources. 
+	 * roles and resources.
 	 *
 	 * @param  array|Kohana_Config  configiration data
 	 */
@@ -209,7 +168,7 @@ abstract class A2_Core extends Acl {
 	/**
 	 * Alias of the logged_in method
 	 */
-	public function logged_in() 
+	public function logged_in()
 	{
 		return $this->a1->logged_in();
 	}
@@ -222,4 +181,23 @@ abstract class A2_Core extends Acl {
 		return $this->a1->get_user();
 	}
 
-} // End A2 lib
+	/**
+	 * Get common resources
+	 *
+	 * @return array
+	 */
+	public function get_common_resource()
+	{
+		return $this->_common_resource;
+	}
+
+	/**
+	 * Get resources
+	 *
+	 * @return array
+	 */
+	public function get_resources()
+	{
+		return $this->_resources;
+	}
+} // End A2_Core

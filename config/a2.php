@@ -17,6 +17,11 @@ return array(
 	),
 
 	/**
+	 * The name of orm library to use. Default - Sprig.
+	 */
+	'orm_driver' => 'Sprig',
+
+	/**
 	 * Throws an a2_exception when authentication fails
 	 */
 	'exception' => FALSE,
@@ -28,7 +33,8 @@ return array(
 	'roles' => array
 	(
 		// ADD YOUR OWN ROLES HERE
-		'user'	=>	'guest'
+		'guest' => NULL,
+		'root'  => NULL
 	),
 
 	/*
@@ -43,9 +49,19 @@ return array(
 	 */
 	'resources' => array
 	(
+		'common'    => NULL,
+		'rule'      => NULL,
+		'resource'  => NULL,
+		'role'      => NULL,
+		'user'      => NULL,
+		'assertion' => NULL,
 		// ADD YOUR OWN RESOURCES HERE
-		//'blog'	=>	NULL
 	),
+
+	/**
+	 * Common parent resource
+	 */
+	'common_resource' => 'common',
 
 	/*
 	 * The ACL Rules (Again, string IDs are fine, use of ACL_Role/Resource_Interface objects also possible)
@@ -77,6 +93,16 @@ return array(
 				'privilege' => array('delete','edit')
 			)
 			 */
+			'system_root_rule' => array(
+				'role' => 'root',
+				'resource' => 'common',
+				'privilege' => array('create', 'read', 'update', 'delete')
+			),
+			'system_guest_rule' => array(
+				'role' => 'guest',
+				'resource' => 'common',
+				'privilege' => array('read')
+			),
 		),
 		'deny' => array
 		(

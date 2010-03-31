@@ -7,285 +7,183 @@
  *
  * @todo implements ACL data caching
  */
-class A2_Driver_Sprig extends A2 {
+class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 
 	/**
-	 * Build A2 from config and database with the help of Sprig orm library
+	 * Loads all roles
 	 *
-	 * @param string $_name
-	 * @param boolean $load_from_db
-	 * @return void
+	 * @return object
 	 */
-	public function __construct($_name = 'a2', $load_from_db = TRUE)
+	public function _load_roles()
 	{
-		// Read config
-		$config = Kohana::config($_name);
-
-		$this->_common_resource = ! empty($config['common_resource']) ? $config['common_resource'] : NULL;
-
-		if ($load_from_db === TRUE)
-		{
-			// load roles
-			$roles = Sprig::factory('role')->load(NULL, NULL);
-
-			// first module run
-			if ( ! count($roles))
-			{
-				// scan&rec roles
-				$roles_data = array();
-				foreach($config['roles'] as $role => $parent)
-				{
-					$role_object = Sprig::factory('role');
-					$role_object->name = $role;
-					$role_object->create();
-
-					$roles_data[$role] = $role_object->id;
-				}
-
-				// set roles parents
-				foreach($config['roles'] as $role => $parent)
-				{
-					if ( ! empty($roles_data[$parent]))
-					{
-						$role_object = Sprig::factory('role', array(
-							'id' => $roles_data[$role]
-						));
-						$role_object->load();
-
-						$role_object->id_parent = $roles_data[$parent];
-						$role_object->update();
-					}
-				}
-
-
-				// scan&rec resoursec
-				$resources_data = array();
-				foreach($config['resources'] as $resource => $parent)
-				{
-					$resource_object = Sprig::factory('resource');
-					$resource_object->name = $resource;
-					$resource_object->create();
-
-					$resources_data[$resource] = $resource_object->id;
-				}
-
-				// set resources parents
-				foreach($config['resources'] as $resource => $parent)
-				{
-					if ( ! empty($config['common_resource']) AND $config['common_resource'] == $resource)
-						continue;
-
-					$id_parent = NULL;
-
-					if ($parent == NULL)
-					{
-						if ($config['common_resource'] AND
-							! empty($resources_data[$config['common_resource']]))
-						{
-							$id_parent = $resources_data[$config['common_resource']];
-						}
-					}
-					else
-					{
-						if ( ! empty($resources_data[$parent]))
-						{
-							$id_parent = $resources_data[$parent];
-						}
-					}
-
-					if ($id_parent != NULL)
-					{
-						$resource_object = Sprig::factory('resource', array(
-							'id' => $resources_data[$resource]
-						));
-						$resource_object->load();
-
-						$resource_object->parent_id = $id_parent;
-						$resource_object->update();
-					}
-				}
-
-				// get all possible privileges
-				$privileges_data = array();
-				foreach($config['rules'] as $type)
-				{
-					foreach($type as $rule)
-					{
-						if ( ! is_array($rule['privilege']))
-						{
-							$rule['privilege'] = (array) $rule['privilege'];
-						}
-
-						foreach($rule['privilege'] as $privilege)
-						{
-							if ( ! isset($privileges_data[$privilege]))
-							{
-								$privilege_object = Sprig::factory('privilege');
-								$privilege_object->name = $privilege;
-								$privilege_object->create();
-
-								$privileges_data[$privilege] = $privilege_object->id;
-							}
-						}
-					}
-				}
-
-				// save rules
-				$rules_data = array();
-				foreach($config['rules'] as $type => $rules)
-				{
-					foreach($rules as $rule => $data)
-					{
-						if (count($data) AND ! empty($resources_data[$data['resource']]))
-						{
-							$rules_object = Sprig::factory('rule');
-							$rules_object->type = $type;
-							$rules_object->name = $rule;
-							$rules_object->resource = $resources_data[$data['resource']];
-
-							if ( ! is_array($data['privilege']))
-							{
-								$data['privilege'] = (array) $data['privilege'];
-							}
-
-							$privileges_array = array();
-							foreach($data['privilege'] as $privilege)
-							{
-								if ( ! empty($privileges_data[$privilege]))
-								{
-									$privileges_array[] = $privileges_data[$privilege];
-								}
-							}
-
-							$rules_object->privileges = $privileges_array;
-							$rules_object->create();
-
-							$rules_data[$rule] = $rules_object->id;
-
-							if ( ! empty($roles_data[$data['role']]))
-							{
-								$roles_object = Sprig::factory('role', array(
-									'id' => $roles_data[$data['role']]
-								));
-								$roles_object->load();
-
-								$roles_object->rules = array($rules_data[$rule]);
-								$roles_object->update();
-							}
-
-							if ( ! empty($data['assertion']))
-							{
-								$assertion_object = Sprig::factory('assertion');
-								$assertion_object->rule = $rules_data[$rule];
-								$assertion_object->resource = $resources_data[$data['resource']];
-								foreach($data['assertion'][1] as $user_field => $resource_field)
-								{
-									$assertion_object->user_field = $user_field;
-									$assertion_object->resource_field = $resource_field;
-									break;
-								}
-								$assertion_object->create();
-							}
-						}
-					}
-				}
-				$roles = Sprig::factory('role')->load(NULL, FALSE);
-			}
-
-			$all_roles = array();
-			foreach($roles as $role)
-			{
-				$all_roles[$role->id] = $role->name;
-			}
-
-			// clear config data
-			$config['roles'] = array();
-
-			// set roles
-			foreach($roles as $role)
-			{
-				$config['roles'][$role->name] = (isset($all_roles[$role->parent_id])) ?
-												$all_roles[$role->parent_id] :
-												NULL;
-			}
-
-			// cache resources for fast get parents
-			$resources = Sprig::factory('resource')->load(NULL, FALSE);
-
-			$all_resources = array();
-			foreach($resources as $resource)
-			{
-				$all_resources[$resource->id] = $resource->name;
-			}
-
-			// clear config data
-			$config['resources'] = array();
-
-			// set resources
-			foreach($resources as $resource)
-			{
-				$config['resources'][$resource->name] = (isset($all_resources[$resource->parent_id])) ?
-														 $all_resources[$resource->parent_id] :
-														 NULL;
-			}
-
-			// clear config data
-			$config['rules'] = array();
-
-			// set rules
-			$rules = Sprig::factory('rule')->load(NULL, FALSE);
-			foreach($rules as $rule)
-			{
-				$config['rules'][$rule->type][$rule->name]['resource'] = $rule->resource->load()->name;
-
-				$roles = array();
-				foreach($rule->roles as $role)
-				{
-					$roles[] = $role->name;
-				}
-				$config['rules'][$rule->type][$rule->name]['role'] = $roles;
-
-				$privileges = array();
-				foreach($rule->privileges as $privilege)
-				{
-					$privileges[] = $privilege->name;
-				}
-				$config['rules'][$rule->type][$rule->name]['privilege'] = $privileges;
-
-				$assertion = $rule->assertion->load();
-				if ( ! empty($assertion->id))
-				{
-					$config['rules'][$rule->type][$rule->name]['assertion'] = array(
-						'Acl_Assert_Argument',
-						array($assertion->user_field => $assertion->resource_field)
-					);
-				}
-			}
-		}
-
-		// Create instance of Authenticate lib (a1, auth, authlite)
-		$instance = new ReflectionMethod($config->lib['class'],'instance');
-
-		$params = !empty($config->lib['params'])
-			? $config->lib['params']
-			: array();
-
-		$this->a1 = $instance->invokeArgs(NULL, $params);
-
-		// Throw exceptions?
-		$this->_exception = $config->exception;
-
-		// Guest role
-		$this->_guest_role = $config['guest_role'];
-
-		// Add Guest Role as role
-		if ( ! array_key_exists($this->_guest_role,$config['roles']))
-		{
-			$this->add_role($this->_guest_role);
-		}
-
-		// Load ACL data
-		$this->load($config);
+		return Sprig::factory('role')->load(NULL, FALSE);
 	}
-	
+
+	/**
+	 * Loads all resources
+	 *
+	 * @return object
+	 */
+	public function _load_resources()
+	{
+		return Sprig::factory('resource')->load(NULL, FALSE);
+	}
+
+	/**
+	 * Loads all rules
+	 *
+	 * @return object
+	 */
+	public function _load_rules()
+	{
+		return Sprig::factory('rule')->load(NULL, FALSE);
+	}
+
+	/**
+	 * Sets new role to database
+	 *
+	 * @param string   $role_name
+	 * @return integer $role->id
+	 */
+	public function _set_role($role_name)
+	{
+		$role = Sprig::factory('role');
+		$role->name = $role_name;
+		$role->create();
+
+		return $role->id;
+	}
+
+	/**
+	 * Sets role parent id
+	 *
+	 * @param integer $role_id
+	 * @param integer $parent_id
+	 */
+	public function _set_role_parent($role_id, $parent_id)
+	{
+		$role = Sprig::factory('role', array(
+			'id' => (int) $role_id
+		));
+		$role->load();
+
+		$role->id_parent = (int) $parent_id;
+		$role->update();
+	}
+
+	/**
+	 * Sets new resource to database
+	 *
+	 * @param string   $resource_name
+	 * @return integer $resource->id
+	 */
+	public function _set_resource($resource_name)
+	{
+		$resource = Sprig::factory('resource');
+		$resource->name = $resource_name;
+		$resource->create();
+
+		return $resource->id;
+	}
+
+	/**
+	 * Sets resource parent id
+	 *
+	 * @param integer $resource_id
+	 * @param integer $parent_id
+	 */
+	public function _set_resource_parent($resource_id, $parent_id)
+	{
+		$resource = Sprig::factory('resource', array(
+			'id' => (int) $resource_id
+		));
+		$resource->load();
+
+		$resource->parent_id = (int) $parent_id;
+		$resource->update();
+	}
+
+	/**
+	 * Sets new privilege to database
+	 *
+	 * @param string   $privilege_name
+	 * @return integer $privilege->id
+	 */
+	public function _set_privilege($privilege_name)
+	{
+		$privilege = Sprig::factory('privilege');
+		$privilege->name = $privilege_name;
+		$privilege->create();
+
+		return $privilege->id;
+	}
+
+	/**
+	 * Initiates new rule object
+	 *
+	 * @param integer $type_id
+	 * @param string  $name
+	 * @param integer $resource_id
+	 * @return object
+	 */
+	public function _init_rule($type_id, $name, $resource_id)
+	{
+		$rule = Sprig::factory('rule');
+		$rule->type = $type_id;
+		$rule->name = $name;
+		$rule->resource = $resource_id;
+
+		return $rule;
+	}
+
+	/**
+	 * Sets new rule to database
+	 *
+	 * @param object   $rule
+	 * @return integer $rule->id
+	 */
+	public function _set_rule($rule)
+	{
+		$rule->create();
+
+		return $rule->id;
+	}
+
+	/**
+	 * Sets new rule to role
+	 * 
+	 * @param integer $role_id
+	 * @param integer $rule
+	 */
+	public function _set_role_rule($role_id, $rule_id)
+	{
+		$role = Sprig::factory('role', array(
+			'id' => (int) $role_id
+		));
+		$role->load();
+
+		$role->rules = array($rule_id);
+		$role->update();
+	}
+
+	/**
+	 * Sets new assertion to database
+	 *
+	 * @param integer $rule_id
+	 * @param integer $resource_id
+	 * @param array   $assetrion
+	 */
+	public function _set_assertion($rule_id, $resource_id, $assetrion)
+	{
+		$assertion = Sprig::factory('assertion');
+		$assertion->rule = $rule_id;
+		$assertion->resource = $resource_id;
+		foreach($assetrion as $user_field => $resource_field)
+		{
+			$assertion->user_field = $user_field;
+			$assertion->resource_field = $resource_field;
+			break;
+		}
+		$assertion->create();
+	}
 } // End A2_Driver_Sprig

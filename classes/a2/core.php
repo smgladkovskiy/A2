@@ -3,22 +3,20 @@
 /**
  * Authorization - provides Authentication (using A1) and ACL through a simple to use
  * interface to the developer.
- * 
+ *
  * @package A2
  * @author Wouter
  * @author devolonter <devolonter@enerdesign.ru>
  * @author smgladkovskiy <smgladkovskiy@gmail.com>
- *
- * @todo create ORM drivers to make it possible to work with different ORM libraries. Sprig is now
- * the default one.
  */
 abstract class A2_Core extends Acl {
 
-	public    $a1;               // the Authentication library (used to retrieve user)
-	protected $_guest_role;      // name of the guest role (used when no user is logged in)
-	protected $_common_resource; // common resources array
+	public    $a1;                // the Authentication library (used to retrieve user)
+	protected $_guest_role;       // name of the guest role (used when no user is logged in)
+	protected $_config;           // Config storage
+	protected $_common_resource;  // common resources array
+	protected static $_instances; // Singleton Instances
 
-	protected $_config;
 	/**
 	 * Return an instance of A2 class
 	 *
@@ -29,22 +27,20 @@ abstract class A2_Core extends Acl {
 	 */
 	public static function instance($_name = 'a2', $load_from_db = TRUE)
 	{
-		static $_instances;
-
-		if ( ! isset($_instances[$_name]) AND ($load_from_db === TRUE))
+		if ( ! isset(self::$_instances[$_name]) AND ($load_from_db === TRUE))
 		{
-			$config = Kohana::config('a2');
+			$config = Kohana::config($_name);
 			$class_name = 'A2_Driver_'.$config['orm_driver'];
-			$_instances[$_name] = new $class_name($_name, TRUE);
+			self::$_instances[$_name] = new $class_name($_name, TRUE);
 		}
 		else
 		{
-			$_instances[$_name] = new A2($_name, FALSE);
+			self::$_instances[$_name] = new A2($_name, FALSE);
 		}
 
-		return $_instances[$_name];
+		return self::$_instances[$_name];
 	}
-	
+
 	/**
 	 * Build A2 from config and database with the help of Sprig orm library
 	 *
@@ -54,8 +50,11 @@ abstract class A2_Core extends Acl {
 	 */
 	public function __construct($_name = 'a2', $load_from_db = TRUE)
 	{
-		// Read config
+		// Reading config
 		$this->_config = Kohana::config($_name);
+
+		// Setting config name
+		$this->_config['name'] = $_name;
 
 		$this->_common_resource = ! empty($this->_config['common_resource']) ? $this->_config['common_resource'] : NULL;
 
@@ -239,13 +238,36 @@ abstract class A2_Core extends Acl {
 	}
 
 	/**
-	 * Get resources
+	 * Get system resources that are setted in config
 	 *
 	 * @return array
 	 */
-	public function get_resources()
+	public function get_system_resources()
 	{
-		return $this->_resources;
+		$config = Kohana::$config->load($this->_config['name']);
+		return $config['resources'];
+	}
+
+	/**
+	 * Get system roles that are setted in config
+	 *
+	 * @return array
+	 */
+	public function get_system_roles()
+	{
+		$config = Kohana::$config->load($this->_config['name']);
+		return $config['roles'];
+	}
+
+	/**
+	 * Get system rules that are setted in config
+	 *
+	 * @return array
+	 */
+	public function get_system_rules()
+	{
+		$config = Kohana::$config->load($this->_config['name']);
+		return $config['rules'];
 	}
 
 	/**

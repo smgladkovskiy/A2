@@ -1,13 +1,13 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 /**
- * A2 Sprig Driver
+ * A2 Jelly Driver
  *
  * @author smgladkovskiy <smgladkovskiy@gmail.com>
  *
  * @todo implements ACL data caching
  */
-class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
+class A2_Driver_Jelly extends A2 implements A2_Driver_Interface {
 
 	/**
 	 * Loads all roles
@@ -16,7 +16,7 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _load_roles()
 	{
-		return Sprig::factory('role')->load(NULL, FALSE);
+		return Jelly::select('role')->execute();
 	}
 
 	/**
@@ -26,7 +26,7 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _load_resources()
 	{
-		return Sprig::factory('resource')->load(NULL, FALSE);
+		return Jelly::select('resource')->execute();
 	}
 
 	/**
@@ -36,29 +36,7 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _load_rules()
 	{
-		return Sprig::factory('rule')->load(NULL, FALSE);
-	}
-
-	/**
-	 * Loads resource name from role object
-	 *
-	 * @param object $rule
-	 * @return string
-	 */
-	public function _load_resource_name($rule)
-	{
-		return $rule->resource->load()->name;
-	}
-
-	/**
-	 * Loads assertion frome rule object
-	 *
-	 * @param object $rule
-	 * @return object
-	 */
-	public function _load_assertion($rule)
-	{
-		return $rule->assertion->load();
+		return Jelly::select('rule')->execute();
 	}
 
 	/**
@@ -69,11 +47,35 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _set_role($role_name)
 	{
-		$role = Sprig::factory('role');
-		$role->name = $role_name;
-		$role->create();
+		$role = Jelly::factory('role')
+			->set(array(
+				'name' => $role_name
+			))
+			->save();
 
 		return $role->id;
+	}
+
+	/**
+	 * Loads resource name from role object
+	 * 
+	 * @param object $rule
+	 * @return string
+	 */
+	public function _load_resource_name($rule)
+	{
+		return $rule->resource->name;
+	}
+
+	/**
+	 * Loads assertion frome rule object
+	 *
+	 * @param object $rule
+	 * @return object
+	 */
+	public function _load_assertion($rule)
+	{
+		return $rule->assertion;
 	}
 
 	/**
@@ -84,13 +86,9 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _set_role_parent($role_id, $parent_id)
 	{
-		$role = Sprig::factory('role', array(
-			'id' => (int) $role_id
-		));
-		$role->load();
-
+		$role = Jelly::factory('role');
 		$role->id_parent = (int) $parent_id;
-		$role->update();
+		$role->save($role_id);
 	}
 
 	/**
@@ -101,9 +99,11 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _set_resource($resource_name)
 	{
-		$resource = Sprig::factory('resource');
-		$resource->name = $resource_name;
-		$resource->create();
+		$resource = Jelly::factory('resource')
+			->set(array(
+				'name' => $resource_name
+			))
+			->save();
 
 		return $resource->id;
 	}
@@ -116,13 +116,9 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _set_resource_parent($resource_id, $parent_id)
 	{
-		$resource = Sprig::factory('resource', array(
-			'id' => (int) $resource_id
-		));
-		$resource->load();
-
+		$resource = Jelly::factory('resource');
 		$resource->parent_id = (int) $parent_id;
-		$resource->update();
+		$resource->save((int) $resource_id);
 	}
 
 	/**
@@ -133,9 +129,11 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _set_privilege($privilege_name)
 	{
-		$privilege = Sprig::factory('privilege');
-		$privilege->name = $privilege_name;
-		$privilege->create();
+		$privilege = Jelly::factory('privilege')
+			->set(array(
+				'name' => $privilege_name
+			))
+			->save();
 
 		return $privilege->id;
 	}
@@ -150,10 +148,12 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _init_rule($type_id, $name, $resource_id)
 	{
-		$rule = Sprig::factory('rule');
-		$rule->type = $type_id;
-		$rule->name = $name;
-		$rule->resource = $resource_id;
+		$rule = Jelly::factory('rule')
+			->set(array(
+				'type' => $type_id,
+				'name' => $name,
+				'resource' => $resource_id
+			));
 
 		return $rule;
 	}
@@ -166,7 +166,7 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _set_rule($rule)
 	{
-		$rule->create();
+		$rule->save();
 
 		return $rule->id;
 	}
@@ -179,13 +179,9 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _set_role_rule($role_id, $rule_id)
 	{
-		$role = Sprig::factory('role', array(
-			'id' => (int) $role_id
-		));
-		$role->load();
-
+		$role = Jelly::factory('role');
 		$role->rules = array($rule_id);
-		$role->update();
+		$role->save((int) $role_id);
 	}
 
 	/**
@@ -197,15 +193,19 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	 */
 	public function _set_assertion($rule_id, $resource_id, $assetrion)
 	{
-		$assertion = Sprig::factory('assertion');
-		$assertion->rule = $rule_id;
-		$assertion->resource = $resource_id;
+		$assertion = Jelly::factory('assertion')
+			->set(array(
+				'rule' => $rule_id,
+				'resource' => $resource_id
+			));
 		foreach($assetrion as $user_field => $resource_field)
 		{
-			$assertion->user_field = $user_field;
-			$assertion->resource_field = $resource_field;
+			$assertion->set(array(
+				'user_field' => $user_field,
+				'resource_field' => $resource_field
+				));
 			break;
 		}
-		$assertion->create();
+		$assertion->save();
 	}
-} // End A2_Driver_Sprig
+} // End A2_Driver_Jelly

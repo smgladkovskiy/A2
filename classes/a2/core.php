@@ -449,7 +449,7 @@ abstract class A2_Core extends Acl {
 
 		foreach($rules as $rule)
 		{
-			$this->_config['rules'][$rule->type][$rule->name]['resource'] = $rule->resource->load()->name;
+			$this->_config['rules'][$rule->type][$rule->name]['resource'] = $this->_load_resource_name($rule);
 
 			$roles = array();
 			foreach($rule->roles as $role)
@@ -465,7 +465,7 @@ abstract class A2_Core extends Acl {
 			}
 			$this->_config['rules'][$rule->type][$rule->name]['privilege'] = $privileges;
 
-			$assertion = $rule->assertion->load();
+			$assertion = $this->_load_assertion($rule);
 			if ( ! empty($assertion->id))
 			{
 				$this->_config['rules'][$rule->type][$rule->name]['assertion'] = array(

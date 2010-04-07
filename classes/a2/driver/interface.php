@@ -29,6 +29,22 @@ interface A2_Driver_Interface {
 	public function _load_rules();
 
 	/**
+	 * Loads resource name from role object
+	 *
+	 * @param object $rule
+	 * @return string
+	 */
+	public function _load_resource_name($rule);
+
+	/**
+	 * Loads assertion frome rule object
+	 *
+	 * @param object $rule
+	 * @return object
+	 */
+	public function _load_assertion($rule);
+
+	/**
 	 * Sets new role to database
 	 *
 	 * @param string   $role_name

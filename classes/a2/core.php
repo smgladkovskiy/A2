@@ -437,8 +437,8 @@ abstract class A2_Core extends Acl {
 		// set resources
 		foreach($resources as $resource)
 		{
-			$this->_config['resources'][$resource->name] = (isset($all_resources[$resource->parent_id])) ?
-													 $all_resources[$resource->parent_id] :
+			$this->_config['resources'][$resource->name] = (isset($all_resources[$resource->parent->id])) ?
+													 $all_resources[$resource->parent->id] :
 													 NULL;
 		}
 

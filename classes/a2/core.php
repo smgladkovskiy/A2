@@ -21,40 +21,41 @@ abstract class A2_Core extends Acl {
 	 * Return an instance of A2 class
 	 *
 	 * @staticvar array $_instances
-	 * @param string $_name
+	 * @param string  $name
 	 * @param boolean $load_from_db
 	 * @return object
 	 */
-	public static function instance($_name = 'a2', $load_from_db = TRUE)
+	public static function instance($name = 'a2', $load_from_db = TRUE)
 	{
-		if ( ! isset(self::$_instances[$_name]) AND ($load_from_db === TRUE))
+		if ( ! isset(self::$_instances[$name]) AND ($load_from_db === TRUE))
 		{
-			$config = Kohana::config($_name);
-			$class_name = 'A2_Driver_'.$config['orm_driver'];
-			self::$_instances[$_name] = new $class_name($_name, TRUE);
+			$a2_config = Kohana::config($name);
+			$a1_config = Kohana::config($a2_config['lib']['class']);
+			$class_name = 'A2_Driver_'.$a1_config['driver'];
+			self::$_instances[$name] = new $class_name($name, TRUE);
 		}
 		else
 		{
-			self::$_instances[$_name] = new A2($_name, FALSE);
+			self::$_instances[$name] = new A2($name, FALSE);
 		}
 
-		return self::$_instances[$_name];
+		return self::$_instances[$name];
 	}
 
 	/**
 	 * Build A2 from config and database with the help of Sprig orm library
 	 *
-	 * @param string $_name
+	 * @param string  $name
 	 * @param boolean $load_from_db
 	 * @return void
 	 */
-	public function __construct($_name = 'a2', $load_from_db = TRUE)
+	public function __construct($name = 'a2', $load_from_db = TRUE)
 	{
 		// Reading config
-		$this->_config = Kohana::config($_name);
+		$this->_config = Kohana::config($name);
 
 		// Setting config name
-		$this->_config['name'] = $_name;
+		$this->_config['name'] = $name;
 
 		$this->_common_resource = ! empty($this->_config['common_resource']) ? $this->_config['common_resource'] : NULL;
 
@@ -164,11 +165,11 @@ abstract class A2_Core extends Acl {
 	/**
 	 * Check if logged in user (or guest) has access to resource/privilege.
 	 *
-	 * @param   mixed     Resource
-	 * @param   string    Privilege
-	 * @param   boolean   Override exception handling set by config
-	 * @return  boolean   Is user allowed
-	 * @throws  A2_Exception   In exception modus, when user is not allowed
+	 * @param  mixed        Resource
+	 * @param  string       Privilege
+	 * @param  boolean      Override exception handling set by config
+	 * @return boolean      Is user allowed
+	 * @throws A2_Exception In exception modus, when user is not allowed
 	 */
 	public function allowed($resource = NULL, $privilege = NULL, $exception = NULL)
 	{

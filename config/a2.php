@@ -1,4 +1,4 @@
-<?php
+<?php defined('SYSPATH') OR die('No direct access allowed.');
 
 return array(
 
@@ -15,11 +15,6 @@ return array(
 		'class'  => 'A1', // (or AUTH)
 		'params' => array('a1')
 	),
-
-	/**
-	 * The name of orm library to use. Default - Sprig.
-	 */
-	'orm_driver' => 'Sprig',
 
 	/**
 	 * Throws an a2_exception when authentication fails

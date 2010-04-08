@@ -4,8 +4,6 @@
  * A2 Sprig Driver
  *
  * @author smgladkovskiy <smgladkovskiy@gmail.com>
- *
- * @todo implements ACL data caching
  */
 class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 
@@ -42,7 +40,7 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	/**
 	 * Loads resource name from role object
 	 *
-	 * @param object $rule
+	 * @param  object $rule
 	 * @return string
 	 */
 	public function _load_resource_name($rule)
@@ -53,7 +51,7 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	/**
 	 * Loads assertion frome rule object
 	 *
-	 * @param object $rule
+	 * @param  object $rule
 	 * @return object
 	 */
 	public function _load_assertion($rule)
@@ -64,7 +62,7 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	/**
 	 * Sets new role to database
 	 *
-	 * @param string   $role_name
+	 * @param  string  $role_name
 	 * @return integer $role->id
 	 */
 	public function _set_role($role_name)
@@ -96,7 +94,7 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	/**
 	 * Sets new resource to database
 	 *
-	 * @param string   $resource_name
+	 * @param  string  $resource_name
 	 * @return integer $resource->id
 	 */
 	public function _set_resource($resource_name)
@@ -128,7 +126,7 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	/**
 	 * Sets new privilege to database
 	 *
-	 * @param string   $privilege_name
+	 * @param  string  $privilege_name
 	 * @return integer $privilege->id
 	 */
 	public function _set_privilege($privilege_name)
@@ -143,9 +141,9 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	/**
 	 * Initiates new rule object
 	 *
-	 * @param integer $type_id
-	 * @param string  $name
-	 * @param integer $resource_id
+	 * @param  integer $type_id
+	 * @param  string  $name
+	 * @param  integer $resource_id
 	 * @return object
 	 */
 	public function _init_rule($type_id, $name, $resource_id)
@@ -161,7 +159,7 @@ class A2_Driver_Sprig extends A2 implements A2_Driver_Interface {
 	/**
 	 * Sets new rule to database
 	 *
-	 * @param object   $rule
+	 * @param  object  $rule
 	 * @return integer $rule->id
 	 */
 	public function _set_rule($rule)

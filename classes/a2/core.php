@@ -417,8 +417,8 @@ abstract class A2_Core extends Acl {
 		// set roles
 		foreach($roles as $role)
 		{
-			$this->_config['roles'][$role->name] = (isset($all_roles[$role->parent_id])) ?
-											$all_roles[$role->parent_id] :
+			$this->_config['roles'][$role->name] = (isset($all_roles[$role->parent->id])) ?
+											$all_roles[$role->parent->id] :
 											NULL;
 		}
 

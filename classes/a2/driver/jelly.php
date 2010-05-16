@@ -85,7 +85,7 @@ class A2_Driver_Jelly extends A2 implements A2_Driver_Interface {
 	public function _set_role_parent($role_id, $parent_id)
 	{
 		$role = Jelly::factory('role');
-		$role->id_parent = (int) $parent_id;
+		$role->parent = (int) $parent_id;
 		$role->save($role_id);
 	}
 
@@ -115,7 +115,7 @@ class A2_Driver_Jelly extends A2 implements A2_Driver_Interface {
 	public function _set_resource_parent($resource_id, $parent_id)
 	{
 		$resource = Jelly::factory('resource');
-		$resource->parent_id = (int) $parent_id;
+		$resource->parent = (int) $parent_id;
 		$resource->save((int) $resource_id);
 	}
 

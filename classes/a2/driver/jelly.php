@@ -164,7 +164,14 @@ class A2_Driver_Jelly extends A2 implements A2_Driver_Interface {
 	 */
 	public function _set_rule($rule)
 	{
-		$rule->save();
+		try
+		{
+			$rule->save();
+		}
+		catch( Validate_Exception $e)
+		{
+			exit(Kohana::debug($e->array->errors('a2')));
+		}
 
 		return $rule->id;
 	}

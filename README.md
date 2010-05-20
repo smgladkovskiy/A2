@@ -64,6 +64,29 @@ This A2 module can work with the data in the database, not only in config file.
 	  PRIMARY KEY  (`rule_id`,`privilege_id`),
 	  KEY `fk_rule_privelege` (`privilege_id`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+	CREATE TABLE IF NOT EXISTS `users` (
+	  `id` smallint(5) unsigned NOT NULL auto_increment,
+	  `customer_id` smallint(5) unsigned default NULL,
+	  `user_data_id` smallint(5) unsigned default NULL,
+	  `email` varchar(120) NOT NULL,
+	  `password` varchar(80) NOT NULL,
+	  `token` varchar(64) default NULL,
+	  `is_active` tinyint(1) NOT NULL default '1',
+	  PRIMARY KEY  (`id`,`email`),
+	  KEY `fk_user_customer` (`customer_id`),
+	  KEY `fk_user_user_data` (`user_data_id`)
+	) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+
+	CREATE TABLE IF NOT EXISTS `user_data` (
+	  `id` smallint(5) unsigned NOT NULL auto_increment,
+	  `last_name` varchar(120) NOT NULL,
+	  `first_name` varchar(120) NOT NULL,
+	  `patronymic` varchar(120) default NULL,
+	  `phone` varchar(20) default NULL,
+	  `company` varchar(120) default NULL,
+	  `position` varchar(120) default NULL,
+	  PRIMARY KEY  (`id`)
+	) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 	ALTER TABLE `assertions`
 	  ADD CONSTRAINT `fk_assertion_resource` FOREIGN KEY (`resource_id`) REFERENCES `resources` (`id`) ON UPDATE CASCADE,
@@ -89,3 +112,6 @@ This A2 module can work with the data in the database, not only in config file.
 	ALTER TABLE `rules_privileges`
 	  ADD CONSTRAINT `fk_privilege_rule` FOREIGN KEY (`rule_id`) REFERENCES `rules` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
 	  ADD CONSTRAINT `fk_rule_privelege` FOREIGN KEY (`privilege_id`) REFERENCES `privileges` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+	ALTER TABLE `users`
+	  ADD CONSTRAINT `fk_user_user_data` FOREIGN KEY (`user_data_id`) REFERENCES `user_data` (`id`) ON UPDATE CASCADE;
